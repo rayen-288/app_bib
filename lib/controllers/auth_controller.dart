@@ -6,9 +6,7 @@ class AuthController {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // =====================================================
-  // 🔥 INSCRIPTION AVEC RÔLE (user par défaut)
-  // =====================================================
+  
   static Future<String?> register(UserModel user, {String role = "user"}) async {
     try {
       // 1️⃣ Créer un compte Firebase Auth
@@ -34,9 +32,7 @@ class AuthController {
     }
   }
 
-  // =====================================================
-  // 🔥 CONNEXION AVEC VERIFICATION DU ROLE
-  // =====================================================
+  
   static Future<String?> loginWithRole(
       String email, String password, bool isAdmin) async {
     try {
@@ -69,9 +65,7 @@ class AuthController {
     }
   }
 
-  // =====================================================
-  // 🔥 CONNEXION SIMPLE (sans rôle)
-  // =====================================================
+ 
   static Future<String?> login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
@@ -81,15 +75,11 @@ class AuthController {
     }
   }
 
-  // =====================================================
-  // 🔥 DÉCONNEXION
-  // =====================================================
+  
   static Future<void> logout() async {
     await _auth.signOut();
   }
 
-  // =====================================================
-  // 🔥 UTILISATEUR ACTUEL
-  // =====================================================
+ 
   static User? get currentUser => _auth.currentUser;
 }

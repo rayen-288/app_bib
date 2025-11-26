@@ -18,12 +18,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // enlève le bandeau DEBUG
+      debugShowCheckedModeBanner: false, 
       title: 'Bibliothèque CSFM',
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: LoginView(), // on commence par la page de connexion
+      home: LoginView(), 
     );
   }
   void main() async {
