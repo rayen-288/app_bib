@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../controllers/auth_controller.dart';
 import '../controllers/book_controller.dart';
 import '../models/book_model.dart';
 import 'ajouter_livre_view.dart';
+import 'login_view.dart';
 
 class HomeView extends StatefulWidget {
   final String email;
@@ -13,153 +15,187 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  final Color primary = Color(0xFF2E7D32);
+  final Color purple1 = Color(0xFF7F00FF);
+  final Color purple2 = Color(0xFFE100FF);
 
   String searchQuery = "";
   String selectedCategory = "Tous";
-
-  // Liste des catégories possibles (mise à jour automatique depuis Firestore)
   List<String> categories = ["Tous"];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // 🌈 AppBar violet moderne
       appBar: AppBar(
-        backgroundColor: primary,
-        title: Text("Bibliothèque CSFM"),
+        title: Text(
+          "Bibliothèque CSFM",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 4,
+        backgroundColor: purple1,
         actions: [
           IconButton(
-            icon: Icon(Icons.account_circle, size: 30),
-            onPressed: () {},
-          )
+            icon: Icon(Icons.person, size: 28),
+            onPressed: () {
+              // futur écran profil
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async {
+              await AuthController.logout();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => LoginView()),
+              );
+            },
+          ),
         ],
       ),
 
-      body: StreamBuilder<List<Book>>(
-        stream: BookController.getBooksStream(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+      // 🔥 Stream Firebase
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [purple1.withOpacity(0.10), purple2.withOpacity(0.10)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
 
-          final books = snapshot.data!;
+        child: StreamBuilder<List<Book>>(
+          stream: BookController.getBooksStream(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(child: CircularProgressIndicator(color: purple1));
+            }
 
-          // Mise à jour automatique de la liste catégories
-          categories = ["Tous"];
-          categories.addAll(
-            books.map((b) => b.category).toSet(),
-          );
+            final books = snapshot.data!;
 
-          // 🔥 Filtrage par recherche + catégorie
-          final filtered = books.where((book) {
-            final matchSearch =
-                book.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                book.author.toLowerCase().contains(searchQuery.toLowerCase());
+            // Mettre à jour automatiquement les catégories
+            categories = ["Tous"];
+            categories.addAll(
+              books.map((b) => b.category).toSet(),
+            );
 
-            final matchCategory = selectedCategory == "Tous"
-                ? true
-                : book.category == selectedCategory;
+            // Filtrage
+            final filtered = books.where((book) {
+              final matchSearch =
+                  book.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                  book.author.toLowerCase().contains(searchQuery.toLowerCase());
 
-            return matchSearch && matchCategory;
-          }).toList();
+              final matchCategory = selectedCategory == "Tous"
+                  ? true
+                  : book.category == selectedCategory;
 
-          return Column(
-            children: [
-              // 🔎 Barre de recherche
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Rechercher un livre...",
-                    prefixIcon: Icon(Icons.search, color: primary),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                  ),
-                  onChanged: (value) {
-                    setState(() => searchQuery = value);
-                  },
-                ),
-              ),
+              return matchSearch && matchCategory;
+            }).toList();
 
-              // 🔽 Liste déroulante catégories
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: Colors.white,
-                    border: Border.all(color: primary, width: 1),
-                  ),
-                  child: DropdownButton<String>(
-                    value: selectedCategory,
-                    isExpanded: true,
-                    underline: SizedBox(),
-                    items: categories.map((cat) {
-                      return DropdownMenuItem(
-                        value: cat,
-                        child: Text(cat),
-                      );
-                    }).toList(),
+            return Column(
+              children: [
+                const SizedBox(height: 12),
+
+                // 🔍 Barre de recherche modernisée
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Rechercher un livre...",
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: Icon(Icons.search, color: purple1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
                     onChanged: (value) {
-                      setState(() => selectedCategory = value!);
+                      setState(() => searchQuery = value);
                     },
                   ),
                 ),
-              ),
 
-              SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              // 📚 Liste des livres filtrés
-              Expanded(
-                child: GridView.builder(
-                  padding: EdgeInsets.all(12),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.65,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                // 🔽 Dropdown Catégorie stylisé
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: purple1, width: 1.2),
+                    ),
+                    child: DropdownButton<String>(
+                      value: selectedCategory,
+                      isExpanded: true,
+                      underline: SizedBox(),
+                      items: categories.map((cat) {
+                        return DropdownMenuItem(
+                          value: cat,
+                          child: Text(cat),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() => selectedCategory = value!);
+                      },
+                    ),
                   ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    return _buildBookCard(filtered[index]);
-                  },
                 ),
-              )
-            ],
-          );
-        },
+
+                const SizedBox(height: 10),
+
+                // 📚 Grille des livres
+                Expanded(
+                  child: GridView.builder(
+                    padding: EdgeInsets.all(15),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.62,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      return _buildBookCard(filtered[index]);
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
 
       floatingActionButton: FloatingActionButton(
-        backgroundColor: primary,
-        child: Icon(Icons.add),
-        onPressed: () async {
-          final result = await Navigator.push(
+        backgroundColor: purple1,
+        child: Icon(Icons.add, size: 30),
+        onPressed: () {
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => AjouterLivreView()),
           );
-
-          if (result == true) setState(() {});
         },
       ),
     );
   }
 
-  // 📘 Carte Livre
+  // 📘 Carte Livre modernisée
   Widget _buildBookCard(Book book) {
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 7,
+      shadowColor: purple1.withOpacity(0.3),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Image du livre
           ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
             child: Image.network(
               book.image,
-              height: 130,
+              height: 140,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -170,18 +206,28 @@ class _HomeViewState extends State<HomeView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(book.title,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                SizedBox(height: 4),
-                Text(book.author,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-                SizedBox(height: 6),
-                Text(book.category,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.teal[700],
-                      fontWeight: FontWeight.w600,
-                    )),
+                Text(
+                  book.title,
+                  style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  maxLines: 2,
+                ),
+                SizedBox(height: 5),
+
+                Text(
+                  book.author,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                ),
+                SizedBox(height: 5),
+
+                Text(
+                  book.category,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: purple1,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),

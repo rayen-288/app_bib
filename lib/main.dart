@@ -26,4 +26,14 @@ class MyApp extends StatelessWidget {
       home: LoginView(), // on commence par la page de connexion
     );
   }
+  void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const MyApp());
+}
+
 }

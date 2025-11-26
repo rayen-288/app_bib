@@ -1,43 +1,95 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 
 class AuthController {
-  static List<UserModel> users = [];
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Validation des champs
-  String? validateRegister({
-    required String fullName,
-    required String age,
-    required String email,
-    required String phone,
-    required String password,
-    required String confirmPassword,
-  }) {
-    if (fullName.isEmpty) return "Le nom est obligatoire";
-    if (int.tryParse(age) == null) return "L'âge doit être un nombre";
-    if (int.parse(age) < 16) return "Vous devez avoir au moins 16 ans";
-    if (!email.contains("@")) return "Email invalide";
-    if (phone.length != 8) return "Le numéro doit contenir 8 chiffres";
-    if (password.length < 6) return "Mot de passe trop court (min 6)";
-    if (password != confirmPassword) return "Les mots de passe ne correspondent pas";
+  // =====================================================
+  // 🔥 INSCRIPTION AVEC RÔLE (user par défaut)
+  // =====================================================
+  static Future<String?> register(UserModel user, {String role = "user"}) async {
+    try {
+      // 1️⃣ Créer un compte Firebase Auth
+      UserCredential cred = await _auth.createUserWithEmailAndPassword(
+        email: user.email,
+        password: user.password,
+      );
 
-    for (var user in users) {
-      if (user.email == email) return "Cet email existe déjà";
+      String uid = cred.user!.uid;
+
+      // 2️⃣ Enregistrer le profil + RÔLE dans Firestore
+      await _db.collection("users").doc(uid).set({
+        "fullName": user.fullName,
+        "age": user.age,
+        "email": user.email,
+        "phone": user.phone,
+        "role": role, // 🔥 Rôle ici
+      });
+
+      return null; // success
+    } catch (e) {
+      return e.toString();
     }
-
-    return null;
   }
 
-  // Inscription
-  bool register(UserModel user) {
-    users.add(user);
-    return true;
-  }
+  // =====================================================
+  // 🔥 CONNEXION AVEC VERIFICATION DU ROLE
+  // =====================================================
+  static Future<String?> loginWithRole(
+      String email, String password, bool isAdmin) async {
+    try {
+      // 1️⃣ Connexion
+      UserCredential cred =
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
 
-  // Connexion
-  bool login(String email, String password) {
-    for (var user in users) {
-      if (user.email == email && user.password == password) return true;
+      String uid = cred.user!.uid;
+
+      // 2️⃣ Récupérer le rôle depuis Firestore
+      DocumentSnapshot doc =
+          await _db.collection("users").doc(uid).get();
+
+      if (!doc.exists) return "Profil utilisateur introuvable";
+
+      String role = doc["role"];
+
+      // 3️⃣ Vérification du rôle attendu
+      if (isAdmin && role != "admin") {
+        return "Ce compte n'est pas un compte ADMIN";
+      }
+
+      if (!isAdmin && role != "user") {
+        return "Veuillez vous connecter en mode Admin";
+      }
+
+      return null; // OK
+    } catch (e) {
+      return e.toString();
     }
-    return false;
   }
+
+  // =====================================================
+  // 🔥 CONNEXION SIMPLE (sans rôle)
+  // =====================================================
+  static Future<String?> login(String email, String password) async {
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // =====================================================
+  // 🔥 DÉCONNEXION
+  // =====================================================
+  static Future<void> logout() async {
+    await _auth.signOut();
+  }
+
+  // =====================================================
+  // 🔥 UTILISATEUR ACTUEL
+  // =====================================================
+  static User? get currentUser => _auth.currentUser;
 }

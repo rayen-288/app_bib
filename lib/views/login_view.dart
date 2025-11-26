@@ -1,161 +1,166 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import 'register_view.dart';
 import 'home_view.dart';
+import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
   @override
-  _LoginViewState createState() => _LoginViewState();
+  State<LoginView> createState() => _LoginViewState();
 }
 
 class _LoginViewState extends State<LoginView> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-  final auth = AuthController();
 
-  // 🔴 Erreurs sous champs
-  String? emailError;
-  String? passError;
-
-  // 🎨 Couleurs thème bibliothèque
-  final Color primary = Color(0xFF2E7D32);      // Vert foncé bibliothèque
-  final Color secondary = Color(0xFF4CAF50);    // Vert clair
-  final Color accent = Color(0xFFFF9800);       // Orange marque-page
-  final Color background = Color(0xFFF3F7F2);   // Blanc cassé
+  bool isAdmin = false; // 🔥 AJOUT DU ROLE
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF7F00FF), Color(0xFFE100FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
 
-      appBar: AppBar(
-        title: Text("Connexion", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: primary,
-        elevation: 0,
-        foregroundColor: Colors.white,
-      ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
 
-      body: Center(
-        child: Card(
-          elevation: 8,
-          shadowColor: primary.withOpacity(0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildField(
-                  controller: emailCtrl,
-                  label: "Email",
-                  icon: Icons.email,
-                  errorText: emailError,
+              child: Card(
+                elevation: 10,
+                shadowColor: Colors.white70,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
                 ),
 
-                _buildField(
-                  controller: passCtrl,
-                  label: "Mot de passe",
-                  icon: Icons.lock,
-                  errorText: passError,
-                  isPassword: true,
-                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(25),
 
-                SizedBox(height: 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Connexion",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7F00FF),
+                        ),
+                      ),
+                      const SizedBox(height: 25),
 
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: accent,
-                    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      TextField(
+                        controller: emailCtrl,
+                        decoration: InputDecoration(
+                          labelText: "Email",
+                          prefixIcon:
+                              Icon(Icons.email, color: Color(0xFF7F00FF)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      TextField(
+                        controller: passCtrl,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: "Mot de passe",
+                          prefixIcon:
+                              Icon(Icons.lock, color: Color(0xFF7F00FF)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // 🔥 Switch Admin
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Connexion Admin ?",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF7F00FF))),
+                          Switch(
+                            value: isAdmin,
+                            activeColor: Color(0xFF7F00FF),
+                            onChanged: (v) {
+                              setState(() {
+                                isAdmin = v;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF7F00FF),
+                          padding: EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 40),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: Text(
+                          "Se connecter",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                        onPressed: () async {
+                          final result = await AuthController.loginWithRole(
+                            emailCtrl.text.trim(),
+                            passCtrl.text.trim(),
+                            isAdmin,
+                          );
+
+                          if (result != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(result)),
+                            );
+                            return;
+                          }
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => HomeView(email: emailCtrl.text),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      TextButton(
+                        child: Text(
+                          "Créer un compte",
+                          style: TextStyle(color: Color(0xFF7F00FF)),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => RegisterView()),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  child: Text("Se connecter",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-
-                  onPressed: validateLogin,
                 ),
-
-                SizedBox(height: 10),
-
-                TextButton(
-                  child: Text("Créer un compte",
-                      style: TextStyle(color: primary, fontSize: 14)),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => RegisterView()),
-                    );
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // 🔎 Validation individuelle
-  void validateLogin() {
-    setState(() {
-      emailError = emailCtrl.text.contains("@") ? null : "Email invalide";
-      passError = passCtrl.text.isEmpty ? "Mot de passe obligatoire" : null;
-    });
-
-    if (emailError != null || passError != null) return;
-
-    bool ok = auth.login(emailCtrl.text, passCtrl.text);
-
-    if (!ok) {
-      setState(() {
-        passError = "Email ou mot de passe incorrect";
-      });
-      return;
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => HomeView(email: emailCtrl.text)),
-    );
-  }
-
-  // 🌿 Champ stylé + erreur
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    String? errorText,
-    bool isPassword = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: controller,
-            obscureText: isPassword,
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: primary),
-              labelText: label,
-              labelStyle: TextStyle(color: primary),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: secondary, width: 2),
-              ),
-            ),
-          ),
-
-          if (errorText != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 5, left: 5),
-              child: Text(
-                errorText,
-                style: TextStyle(color: Colors.red, fontSize: 13),
-              ),
-            ),
-        ],
       ),
     );
   }
