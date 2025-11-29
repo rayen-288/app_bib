@@ -46,79 +46,80 @@ class _RegisterViewState extends State<RegisterView> {
               child: Padding(
                 padding: const EdgeInsets.all(25),
 
-                child: Column(
-                  children: [
-                    Text(
-                      "Créer un compte",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF7F00FF),
+                child: Form(
+                  key: _formKey,  // ✅ FORMULIARE ACTIVÉ
+                  child: Column(
+                    children: [
+                      Text(
+                        "Créer un compte",
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7F00FF),
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 25),
+                      const SizedBox(height: 25),
 
-                    // CHAMPS
-                    _field(fullNameCtrl, "Nom complet", Icons.person),
-                    const SizedBox(height: 15),
+                      _field(fullNameCtrl, "Nom complet", Icons.person),
+                      const SizedBox(height: 15),
 
-                    _field(ageCtrl, "Âge", Icons.cake, number: true),
-                    const SizedBox(height: 15),
+                      _field(ageCtrl, "Âge", Icons.cake, number: true),
+                      const SizedBox(height: 15),
 
-                    _field(emailCtrl, "Email", Icons.email),
-                    const SizedBox(height: 15),
+                      _field(emailCtrl, "Email", Icons.email),
+                      const SizedBox(height: 15),
 
-                    _field(phoneCtrl, "Téléphone", Icons.phone, number: true),
-                    const SizedBox(height: 15),
+                      _field(phoneCtrl, "Téléphone", Icons.phone, number: true),
+                      const SizedBox(height: 15),
 
-                    _field(passCtrl, "Mot de passe", Icons.lock, password: true),
-                    const SizedBox(height: 15),
+                      _field(passCtrl, "Mot de passe", Icons.lock, password: true),
+                      const SizedBox(height: 15),
 
-                    _field(
-                      confirmCtrl,
-                      "Confirmer Mot de passe",
-                      Icons.lock_outline,
-                      password: true,
-                    ),
+                      _field(
+                        confirmCtrl,
+                        "Confirmer Mot de passe",
+                        Icons.lock_outline,
+                        password: true,
+                      ),
 
-                    const SizedBox(height: 25),
+                      const SizedBox(height: 25),
 
-                    // BOUTON
-                    isLoading
-                        ? CircularProgressIndicator()
-                        : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF7F00FF),
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 14, horizontal: 40),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                      isLoading
+                          ? CircularProgressIndicator()
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF7F00FF),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
                               ),
+                              child: Text(
+                                "Créer un compte",
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.white),
+                              ),
+                              onPressed: _registerUser,
                             ),
-                            child: Text(
-                              "Créer un compte",
-                              style: TextStyle(
-                                  fontSize: 16, color: Colors.white),
-                            ),
-                            onPressed: _registerUser,
-                          ),
 
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
-                    TextButton(
-                      child: Text(
-                        "Déjà un compte ? Connexion",
-                        style: TextStyle(color: Color(0xFF7F00FF)),
+                      TextButton(
+                        child: Text(
+                          "Déjà un compte ? Connexion",
+                          style: TextStyle(color: Color(0xFF7F00FF)),
+                        ),
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => LoginView()),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => LoginView()),
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -128,7 +129,7 @@ class _RegisterViewState extends State<RegisterView> {
     );
   }
 
-  // CHAMP DE TEXTE
+  // CHAMPS DE TEXTE
   Widget _field(TextEditingController ctrl, String label, IconData icon,
       {bool password = false, bool number = false}) {
     return TextFormField(
@@ -180,6 +181,7 @@ class _RegisterViewState extends State<RegisterView> {
       email: emailCtrl.text.trim(),
       phone: phoneCtrl.text.trim(),
       password: passCtrl.text.trim(),
+      role: "user", // 🔥 IMPORTANT
     );
 
     final error = await AuthController.register(user);
