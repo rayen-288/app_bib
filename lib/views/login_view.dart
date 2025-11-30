@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../controllers/auth_controller.dart';
-import 'home_view.dart';
+import 'home_view.dart';          // Pour Admin
+import 'user_home_view.dart';     // Pour User
 import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -12,7 +13,7 @@ class _LoginViewState extends State<LoginView> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
-  bool isAdmin = false; // 🔥 AJOUT DU ROLE
+  bool isAdmin = false; // 🔥 Rôle sélectionné par l’utilisateur
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +26,13 @@ class _LoginViewState extends State<LoginView> {
             end: Alignment.bottomRight,
           ),
         ),
-
         child: Center(
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(20),
 
               child: Card(
-                elevation: 10,
+                elevation: 12,
                 shadowColor: Colors.white70,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
@@ -54,12 +54,12 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       const SizedBox(height: 25),
 
+                      // EMAIL
                       TextField(
                         controller: emailCtrl,
                         decoration: InputDecoration(
                           labelText: "Email",
-                          prefixIcon:
-                              Icon(Icons.email, color: Color(0xFF7F00FF)),
+                          prefixIcon: Icon(Icons.email, color: Color(0xFF7F00FF)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -67,13 +67,13 @@ class _LoginViewState extends State<LoginView> {
                       ),
                       const SizedBox(height: 20),
 
+                      // PASSWORD
                       TextField(
                         controller: passCtrl,
                         obscureText: true,
                         decoration: InputDecoration(
                           labelText: "Mot de passe",
-                          prefixIcon:
-                              Icon(Icons.lock, color: Color(0xFF7F00FF)),
+                          prefixIcon: Icon(Icons.lock, color: Color(0xFF7F00FF)),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
@@ -86,24 +86,25 @@ class _LoginViewState extends State<LoginView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("Connexion Admin ?",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF7F00FF))),
+                          Text(
+                            "Connexion Admin ?",
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF7F00FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           Switch(
                             value: isAdmin,
                             activeColor: Color(0xFF7F00FF),
-                            onChanged: (v) {
-                              setState(() {
-                                isAdmin = v;
-                              });
-                            },
+                            onChanged: (v) => setState(() => isAdmin = v),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 25),
 
+                      // BUTTON LOGIN
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF7F00FF),
@@ -117,27 +118,7 @@ class _LoginViewState extends State<LoginView> {
                           "Se connecter",
                           style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
-                        onPressed: () async {
-                          final result = await AuthController.loginWithRole(
-                            emailCtrl.text.trim(),
-                            passCtrl.text.trim(),
-                            isAdmin,
-                          );
-
-                          if (result != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(result)),
-                            );
-                            return;
-                          }
-
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => HomeView(email: emailCtrl.text),
-                            ),
-                          );
-                        },
+                        onPressed: _loginUser,
                       ),
 
                       const SizedBox(height: 15),
@@ -163,5 +144,34 @@ class _LoginViewState extends State<LoginView> {
         ),
       ),
     );
+  }
+
+  // 🔥 LOGIQUE DE CONNEXION
+  Future<void> _loginUser() async {
+    final result = await AuthController.loginWithRole(
+      emailCtrl.text.trim(),
+      passCtrl.text.trim(),
+      isAdmin,
+    );
+
+    if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
+      return;
+    }
+
+    // 🔥 Redirection selon le rôle
+    if (isAdmin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeView(email: emailCtrl.text)),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => UserHomeView(userName: emailCtrl.text)),
+      );
+    }
   }
 }

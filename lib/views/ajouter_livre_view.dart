@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/book_model.dart';
 import '../controllers/book_controller.dart';
+import '../controllers/auth_controller.dart';
 
 class AjouterLivreView extends StatefulWidget {
   const AjouterLivreView({super.key});
@@ -72,21 +73,29 @@ class _AjouterLivreViewState extends State<AjouterLivreView> {
   Future<void> _addBook() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 🔥 Récupère le rôle de l'utilisateur connecté
+    final user = AuthController.currentUser;
+    if (user == null) return;
+
     final book = Book(
       title: _titreCtrl.text.trim(),
       author: _auteurCtrl.text.trim(),
       category: _categorieCtrl.text.trim(),
       image: "https://th.bing.com/th/id/R.7996bcb0bee8bcda2d1d554fdbe1c493?rik=E4YNjkSl5Obn0Q&riu=http%3a%2f%2flepassetempsderose.l.e.pic.centerblog.net%2fo%2f67c019e5.png&ehk=qShDEF3a%2fhZtKWKarnlSRa%2f08fKeaX%2bH7dWprgBajE8%3d&risl=&pid=ImgRaw&r=0",
       available: true,
+      addedBy: user.uid, // 🔥 IMPORTANT : enregistre qui ajoute le livre
     );
 
     try {
       await BookController.addBook(book);
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Livre ajouté !")),
       );
+
       Navigator.pop(context);
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
