@@ -13,7 +13,6 @@ class UserHomeView extends StatefulWidget {
 
 class _UserHomeViewState extends State<UserHomeView> {
   final Color primary = Color(0xFF7F00FF);
-
   String searchQuery = "";
 
   @override
@@ -32,13 +31,13 @@ class _UserHomeViewState extends State<UserHomeView> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
 
-          // Récupération des livres Firestore
+          // 📌 Tous les livres Firestore
           final books = snapshot.data!;
 
-          // Sélection uniquement des livres ajoutés par ADMIN
-          final adminBooks = books.where((b) => b.addedBy == "admin").toList();
+          // 📌 On garde UNIQUEMENT les livres ajoutés par ADMIN
+          final adminBooks = books.where((b) => b.addedByRole == "admin").toList();
 
-          // Filtres + recherche
+          // 📌 Recherche
           final filtered = adminBooks.where((book) {
             return book.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
                    book.author.toLowerCase().contains(searchQuery.toLowerCase());
@@ -46,7 +45,7 @@ class _UserHomeViewState extends State<UserHomeView> {
 
           return Column(
             children: [
-              // 🔎 Barre de recherche
+              // 🔎 BARRE DE RECHERCHE
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: TextField(
@@ -69,7 +68,7 @@ class _UserHomeViewState extends State<UserHomeView> {
                 child: filtered.isEmpty
                     ? Center(
                         child: Text(
-                          "Aucun livre ajouté par l'administrateur.",
+                          "Aucun livre ajouté par l’administrateur.",
                           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         ),
                       )
@@ -94,7 +93,7 @@ class _UserHomeViewState extends State<UserHomeView> {
     );
   }
 
-  // 📘 Carte livre moderne
+  // 📘 CARTE LIVRE
   Widget _buildBookCard(Book book) {
     return Card(
       elevation: 5,
@@ -102,7 +101,6 @@ class _UserHomeViewState extends State<UserHomeView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // IMAGE
           ClipRRect(
             borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
             child: Image.network(
@@ -123,7 +121,6 @@ class _UserHomeViewState extends State<UserHomeView> {
                 SizedBox(height: 4),
                 Text(book.author,
                     style: TextStyle(fontSize: 12, color: Colors.grey[700])),
-
                 SizedBox(height: 6),
                 Text(book.category,
                     style: TextStyle(

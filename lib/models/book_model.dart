@@ -5,7 +5,8 @@ class Book {
   final String category;
   final String image;
   final bool available;
-  final String addedBy; // 🔥 admin ID ou user ID
+  final String addedBy;
+  final String addedByRole;
 
   Book({
     this.id = '',
@@ -14,10 +15,10 @@ class Book {
     required this.category,
     required this.image,
     required this.available,
-    required this.addedBy, // 🔥 obligatoire
+    required this.addedBy,
+    required this.addedByRole,
   });
 
-  // Crée un livre depuis Firestore
   factory Book.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Book(
       id: documentId,
@@ -26,11 +27,11 @@ class Book {
       category: data['category'] ?? '',
       image: data['image'] ?? '',
       available: data['available'] ?? true,
-      addedBy: data['addedBy'] ?? "", // 🔥 récupère l'admin ou user
+      addedBy: data['addedBy'] ?? '',
+      addedByRole: data['addedByRole'] ?? '',
     );
   }
 
-  // Convertit un livre en Map pour Firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -38,7 +39,8 @@ class Book {
       'category': category,
       'image': image,
       'available': available,
-      'addedBy': addedBy, // 🔥 sauvegarde l'auteur du livre
+      'addedBy': addedBy,
+      'addedByRole': addedByRole,
     };
   }
 }

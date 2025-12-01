@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/book_model.dart';
 import '../controllers/book_controller.dart';
 import '../controllers/auth_controller.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AjouterLivreView extends StatefulWidget {
   const AjouterLivreView({super.key});
@@ -73,9 +74,14 @@ class _AjouterLivreViewState extends State<AjouterLivreView> {
   Future<void> _addBook() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // 🔥 Récupère le rôle de l'utilisateur connecté
     final user = AuthController.currentUser;
     if (user == null) return;
+
+    // 🔥 Récupérer rôle du compte Firestore
+    DocumentSnapshot doc =
+        await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
+
+    final role = doc["role"] ?? "user";
 
     final book = Book(
       title: _titreCtrl.text.trim(),
@@ -83,7 +89,8 @@ class _AjouterLivreViewState extends State<AjouterLivreView> {
       category: _categorieCtrl.text.trim(),
       image: "https://th.bing.com/th/id/R.7996bcb0bee8bcda2d1d554fdbe1c493?rik=E4YNjkSl5Obn0Q&riu=http%3a%2f%2flepassetempsderose.l.e.pic.centerblog.net%2fo%2f67c019e5.png&ehk=qShDEF3a%2fhZtKWKarnlSRa%2f08fKeaX%2bH7dWprgBajE8%3d&risl=&pid=ImgRaw&r=0",
       available: true,
-      addedBy: user.uid, // 🔥 IMPORTANT : enregistre qui ajoute le livre
+      addedBy: user.uid,
+      addedByRole: role, // 🟣 IMPORTANT !!!
     );
 
     try {
