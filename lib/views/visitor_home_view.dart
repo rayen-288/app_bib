@@ -1,69 +1,47 @@
 import 'package:flutter/material.dart';
-import '../controllers/auth_controller.dart';
 import '../controllers/book_controller.dart';
 import '../models/book_model.dart';
-import 'ajouter_livre_view.dart';
 import 'login_view.dart';
-import 'admin_reservation_view.dart';
 
-class HomeView extends StatefulWidget {
-  final String email;
-
-  const HomeView({super.key, required this.email});
+class VisitorHomeView extends StatefulWidget {
+  const VisitorHomeView({super.key});
 
   @override
-  State<HomeView> createState() => _HomeViewState();
+  State<VisitorHomeView> createState() => _VisitorHomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _VisitorHomeViewState extends State<VisitorHomeView> {
   final Color primary = const Color(0xFF7F00FF);
-  final Color secondary = const Color(0xFFE100FF);
-
   String searchQuery = "";
-  String selectedCategory = "Tous";
-  List<String> categories = ["Tous"];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FA),
-
-      // 🔥 APP BAR MODERNE
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: primary,
+        elevation: 0,
         centerTitle: true,
         title: const Text(
-          "Bibliothèque CSFM",
+          "Bibliothèque • Visiteur",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         actions: [
-          _iconButton(
-            icon: Icons.assignment,
-            tooltip: "Réservations",
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AdminReservationView(),
-              ),
-            ),
-          ),
-          _iconButton(
-            icon: Icons.logout,
-            tooltip: "Déconnexion",
-            onTap: () async {
-              await AuthController.logout();
-              if (!mounted) return;
+          TextButton(
+            onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) =>  LoginView()),
+                MaterialPageRoute(builder: (_) => LoginView()),
               );
             },
+            child: const Text(
+              "Connexion",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
 
-      // 🔥 BODY
       body: StreamBuilder<List<Book>>(
         stream: BookController.getBooksStream(),
         builder: (context, snapshot) {
@@ -73,77 +51,57 @@ class _HomeViewState extends State<HomeView> {
             );
           }
 
-          final books = snapshot.data!;
+          final adminBooks = snapshot.data!
+              .where((b) => b.addedByRole == "admin")
+              .toList();
 
-          categories = ["Tous"];
-          categories.addAll(books.map((b) => b.category).toSet());
-
-          final filtered = books.where((book) {
-            final matchSearch =
-                book.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                book.author.toLowerCase().contains(searchQuery.toLowerCase());
-
-            final matchCategory = selectedCategory == "Tous"
-                ? true
-                : book.category == selectedCategory;
-
-            return matchSearch && matchCategory;
+          final filtered = adminBooks.where((book) {
+            return book.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                   book.author.toLowerCase().contains(searchQuery.toLowerCase());
           }).toList();
 
           return Column(
             children: [
               const SizedBox(height: 12),
 
-              // 🔍 SEARCH BAR
+              // 🔍 SEARCH
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _searchField(),
               ),
 
-              const SizedBox(height: 12),
-
-              // 🔽 CATEGORIES
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _categoryDropdown(),
-              ),
-
               const SizedBox(height: 16),
 
-              // 📚 GRID LIVRES
+              // 📚 GRID
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.60,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) => _bookCard(filtered[i]),
-                ),
+                child: filtered.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "Aucun livre disponible",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.60,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) => _bookCard(filtered[i]),
+                      ),
               ),
             ],
           );
         },
       ),
-
-      // ➕ FAB
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: primary,
-        elevation: 6,
-        child: const Icon(Icons.add, size: 30),
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AjouterLivreView()),
-        ),
-      ),
     );
   }
 
-  // 🔹 SEARCH
+  // 🔍 SEARCH FIELD
   Widget _searchField() {
     return TextField(
       onChanged: (v) => setState(() => searchQuery = v),
@@ -160,36 +118,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // 🔹 CATEGORIES
-  Widget _categoryDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12.withOpacity(0.05),
-            blurRadius: 10,
-          )
-        ],
-      ),
-      child: DropdownButton<String>(
-        value: selectedCategory,
-        isExpanded: true,
-        underline: const SizedBox(),
-        items: categories.map((cat) {
-          return DropdownMenuItem(
-            value: cat,
-            child: Text(cat),
-          );
-        }).toList(),
-        onChanged: (v) => setState(() => selectedCategory = v!),
-      ),
-    );
-  }
-
-  // 📘 CARD LIVRE MODERNE
+  // 📘 CARD LIVRE (VISITEUR)
   Widget _bookCard(Book book) {
     return Container(
       decoration: BoxDecoration(
@@ -230,7 +159,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            // 🏷 CATEGORY
+            // 🏷 STATUS
             Positioned(
               top: 10,
               right: 10,
@@ -238,11 +167,11 @@ class _HomeViewState extends State<HomeView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: primary,
+                  color: book.available ? primary : Colors.grey,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  book.category,
+                  book.available ? "Disponible" : "Indisponible",
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -252,7 +181,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            // 📘 TEXT
+            // 📘 INFOS + BOUTON LOGIN
             Positioned(
               left: 12,
               right: 12,
@@ -278,6 +207,28 @@ class _HomeViewState extends State<HomeView> {
                       fontSize: 12,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onPressed: _goToLogin,
+                      child: Text(
+                        "Se connecter pour réserver",
+                        style: TextStyle(
+                          color: primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -287,16 +238,10 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // 🔹 ICON BUTTON
-  Widget _iconButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-  }) {
-    return IconButton(
-      tooltip: tooltip,
-      icon: Icon(icon),
-      onPressed: onTap,
+  void _goToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => LoginView()),
     );
   }
 }

@@ -5,7 +5,6 @@ class Book {
   final String category;
   final String image;
   final bool available;
-  final String addedBy;
   final String addedByRole;
 
   Book({
@@ -15,19 +14,17 @@ class Book {
     required this.category,
     required this.image,
     required this.available,
-    required this.addedBy,
     required this.addedByRole,
   });
 
-  factory Book.fromFirestore(Map<String, dynamic> data, String documentId) {
+  factory Book.fromFirestore(Map<String, dynamic> data, String docId) {
     return Book(
-      id: documentId,
+      id: docId,
       title: data['title'] ?? '',
       author: data['author'] ?? '',
       category: data['category'] ?? '',
       image: data['image'] ?? '',
       available: data['available'] ?? true,
-      addedBy: data['addedBy'] ?? '',
       addedByRole: data['addedByRole'] ?? '',
     );
   }
@@ -39,7 +36,6 @@ class Book {
       'category': category,
       'image': image,
       'available': available,
-      'addedBy': addedBy,
       'addedByRole': addedByRole,
     };
   }

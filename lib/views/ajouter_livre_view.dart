@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/book_model.dart';
 import '../controllers/book_controller.dart';
 import '../controllers/auth_controller.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AjouterLivreView extends StatefulWidget {
   const AjouterLivreView({super.key});
@@ -13,37 +13,125 @@ class AjouterLivreView extends StatefulWidget {
 
 class _AjouterLivreViewState extends State<AjouterLivreView> {
   final _formKey = GlobalKey<FormState>();
+
   final _titreCtrl = TextEditingController();
   final _auteurCtrl = TextEditingController();
   final _categorieCtrl = TextEditingController();
+  final _imageUrlCtrl = TextEditingController();
 
   @override
   void dispose() {
     _titreCtrl.dispose();
     _auteurCtrl.dispose();
     _categorieCtrl.dispose();
+    _imageUrlCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final primary = Colors.deepPurple;
+    final secondary = Colors.purple.shade50;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Ajouter un livre")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: Colors.grey.shade100,
+      appBar: AppBar(
+        title: const Text("Ajouter un livre"),
+        backgroundColor: primary,
+        elevation: 2,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
-              _buildField(_titreCtrl, "Titre", Icons.book),
+              _buildField(_titreCtrl, "Titre du livre", Icons.book, primary),
               const SizedBox(height: 16),
-              _buildField(_auteurCtrl, "Auteur", Icons.person),
+              _buildField(_auteurCtrl, "Auteur", Icons.person, primary),
               const SizedBox(height: 16),
-              _buildField(_categorieCtrl, "Catégorie", Icons.category),
-              const SizedBox(height: 25),
-              ElevatedButton(
-                onPressed: _addBook,
-                child: const Text("Ajouter le livre"),
+              _buildField(_categorieCtrl, "Catégorie", Icons.category, primary),
+              const SizedBox(height: 16),
+
+              // Champ URL Image
+              TextFormField(
+                controller: _imageUrlCtrl,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.image),
+                  labelText: "URL de l’image",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: primary, width: 2),
+                  ),
+                ),
+                keyboardType: TextInputType.url,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return "URL obligatoire";
+                  if (!Uri.tryParse(value)!.isAbsolute) return "URL invalide";
+                  return null;
+                },
+                onChanged: (_) => setState(() {}),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Aperçu image dans une card
+              if (_imageUrlCtrl.text.isNotEmpty &&
+                  Uri.tryParse(_imageUrlCtrl.text)?.isAbsolute == true)
+                Card(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  elevation: 4,
+                  shadowColor: Colors.black12,
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.network(
+                    _imageUrlCtrl.text,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 180,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Text(
+                          "Impossible de charger l'image",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 30),
+
+              // Bouton Ajouter
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 5,
+                    shadowColor: primary.withOpacity(0.3),
+                  ),
+                  onPressed: _addBook,
+                  child: const Text(
+                    "Ajouter le livre",
+                    style: TextStyle(fontSize: 16,color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ],
           ),
@@ -52,22 +140,24 @@ class _AjouterLivreViewState extends State<AjouterLivreView> {
     );
   }
 
-  Widget _buildField(TextEditingController ctrl, String label, IconData icon) {
+  // Champ stylisé moderne
+  Widget _buildField(
+      TextEditingController ctrl, String label, IconData icon, Color primary) {
     return TextFormField(
       controller: ctrl,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon),
+        prefixIcon: Icon(icon, color: primary),
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
         filled: true,
         fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: primary, width: 2),
+        ),
       ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return "Champ obligatoire";
-        }
-        return null;
-      },
+      validator: (value) =>
+          value == null || value.trim().isEmpty ? "Champ obligatoire" : null,
     );
   }
 
@@ -77,36 +167,42 @@ class _AjouterLivreViewState extends State<AjouterLivreView> {
     final user = AuthController.currentUser;
     if (user == null) return;
 
-    // 🔥 Récupérer rôle du compte Firestore
-    DocumentSnapshot doc =
-        await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user.uid)
+        .get();
 
-    final role = doc["role"] ?? "user";
+    final role = doc.exists ? doc["role"] : "user";
+
+    if (role != "admin") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Accès réservé à l’admin")),
+      );
+      return;
+    }
 
     final book = Book(
       title: _titreCtrl.text.trim(),
       author: _auteurCtrl.text.trim(),
       category: _categorieCtrl.text.trim(),
-      image: "https://th.bing.com/th/id/R.7996bcb0bee8bcda2d1d554fdbe1c493?rik=E4YNjkSl5Obn0Q&riu=http%3a%2f%2flepassetempsderose.l.e.pic.centerblog.net%2fo%2f67c019e5.png&ehk=qShDEF3a%2fhZtKWKarnlSRa%2f08fKeaX%2bH7dWprgBajE8%3d&risl=&pid=ImgRaw&r=0",
+      image: _imageUrlCtrl.text.trim(),
       available: true,
-      addedBy: user.uid,
-      addedByRole: role, // 🟣 IMPORTANT !!!
+      addedByRole: "admin",
     );
 
     try {
       await BookController.addBook(book);
 
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Livre ajouté !")),
+        const SnackBar(content: Text("Livre ajouté avec succès 📚")),
       );
 
       Navigator.pop(context);
-
     } catch (e) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur lors de l'ajout : $e")),
+        SnackBar(content: Text("Erreur : $e")),
       );
     }
   }
